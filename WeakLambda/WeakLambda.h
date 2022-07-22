@@ -20,7 +20,8 @@ public:
         auto weak_callback = [weak_p = std::weak_ptr<Holder>(holder_->shared_from_this()), lambda](T... lambda_args){
             std::shared_ptr<Holder> ptr = weak_p.lock();
             if (ptr)
-                lambda(lambda_args...);
+                return lambda(lambda_args...);
+            return std::function<void(T... lambda_args)>();
         };
 
         return weak_callback;
