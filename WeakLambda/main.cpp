@@ -21,9 +21,10 @@ int main()
 {
     std::function<void()> callback = nullptr;
     {
-        //A* a = new A;
-        std::shared_ptr<A> a = std::make_shared<A>();
+        A* a = new A;
+        //std::shared_ptr<A> a = std::make_shared<A>();
         callback = a->hahaha();
+        delete a;
     }
 
 
