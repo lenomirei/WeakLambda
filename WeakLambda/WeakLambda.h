@@ -2,6 +2,34 @@
 
 #include <functional>
 
+template <typename T, typename F>
+class WeakBind
+{
+public:
+    WeakBind() = delete;
+    WeakBind(const std::shared_ptr<T>& ptr, const F& func) : func_(func), weak_obj_(ptr)
+    {
+    }
+    
+
+    template<typename... ArgTypes>
+    auto operator()(ArgTypes... args) -> typename std::result_of<F(ArgTypes...)>::type
+    {
+        std::shared_ptr<T> obj = weak_obj_.lock();
+        if (obj)
+        {
+            return func_(args...);
+        }
+        else
+        {
+            return decltype(func_(args...))();
+        }
+    }
+private:
+    F func_;
+    std::weak_ptr<T> weak_obj_;
+};
+
 
 class EnableWeakLambdaCapture
 {
@@ -9,30 +37,23 @@ public:
     class Holder : public std::enable_shared_from_this<Holder>
     {};
 
-    template<typename Functor, typename... T>
-    std::function<void(T... lambda_args)> CreateWeakCallback(const Functor& lambda)
+    template<typename Functor>
+    WeakBind<Holder, Functor> CreateWeakCallback(const Functor& lambda)
     {
         if (!holder_)
         {
             holder_ = std::make_shared<Holder>();
         }
 
-        auto weak_callback = [weak_p = std::weak_ptr<Holder>(holder_->shared_from_this()), lambda](T... lambda_args){
-            std::shared_ptr<Holder> ptr = weak_p.lock();
-            if (ptr)
-                return lambda(lambda_args...);
-            return std::function<void(T... lambda_args)>();
-        };
-
-        return weak_callback;
+        return WeakBind<Holder, Functor>(holder_, lambda);
     }
 
 private:
     std::shared_ptr<Holder> holder_;
 };
 
-template<typename T, typename Functor, typename... Args>
-std::function<void(Args... lambda_args)> weak_lambda(T* pointer, Functor lambda)
+template<typename T, typename Functor>
+auto weak_lambda(T* pointer, Functor lambda) -> WeakBind<EnableWeakLambdaCapture::Holder, Functor>
 {
     return pointer->CreateWeakCallback(lambda);
 }

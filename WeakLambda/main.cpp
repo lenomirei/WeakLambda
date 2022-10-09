@@ -7,7 +7,7 @@ class A : public EnableWeakLambdaCapture
 {
 public:
     int dedede = 10;
-    std::function<void()> hahaha()
+    auto hahaha()
     {
         auto result_lambda = weak_lambda(this, [this]() {
             std::cout << this->dedede << std::endl;
