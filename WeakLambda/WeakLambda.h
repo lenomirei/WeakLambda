@@ -42,7 +42,7 @@ public:
     {};
 
     template<typename Functor>
-    WeakLambda<Holder, Functor> CreateWeakCallback(const Functor& lambda)
+    WeakLambda<Holder, Functor> CreateWeakLambda(const Functor& lambda)
     {
         if (!holder_)
         {
@@ -56,8 +56,28 @@ private:
     std::shared_ptr<Holder> holder_;
 };
 
-template<typename T, typename Functor>
-auto weak_lambda(T* pointer, Functor lambda) -> WeakLambda<EnableWeakLambdaCapture::Holder, Functor>
+template<typename T, bool>
+struct WeakLambdaHelper
+{   
+    template<typename Functor>
+    static WeakLambda<T, Functor> CreateWeakLambda(T* pointer, Functor lambda)
+    {
+        return WeakLambda<T, Functor>(pointer, lambda);
+    }
+};
+
+template<typename T>
+struct WeakLambdaHelper<T, true>
 {
-    return pointer->CreateWeakCallback(lambda);
+    template<typename Functor>
+    static WeakLambda<EnableWeakLambdaCapture::Holder, Functor> CreateWeakLambda(T* pointer, Functor lambda)
+    {
+        return pointer->CreateWeakLambda(lambda);
+    }
+};
+
+template<typename T, typename Functor>
+auto weak_lambda(T* pointer, Functor lambda) -> WeakLambda<typename std::conditional<std::is_base_of<EnableWeakLambdaCapture, T>::value, EnableWeakLambdaCapture::Holder, T>::type, Functor>
+{
+    return WeakLambdaHelper<T, std::is_base_of<EnableWeakLambdaCapture, T>::value>::CreateWeakLambda(pointer, lambda);
 }
