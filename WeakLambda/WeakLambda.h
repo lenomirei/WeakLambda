@@ -16,6 +16,28 @@ public:
     {
     }
 
+    WeakLambda(const WeakLambda& other) : func_(other.func_), weak_obj_(other.weak_obj_)
+    {}
+
+    WeakLambda(const WeakLambda&& other) : func_(std::move(other.func_)), weak_obj_(std::move(other.weak_obj_))
+    {
+    }
+
+    WeakLambda(WeakLambda&& other) : func_(std::move(other.func_)), weak_obj_(std::move(other.weak_obj_))
+    {
+    }
+
+    WeakLambda& operator=(const WeakLambda& other)
+    {
+        if (this != &other)
+        {
+            this->func = other.func_;
+            this->weak_obj_ = other.weak_obj_;
+        }
+        return *this;
+
+    }
+
     template<typename... ArgTypes>
     auto operator()(ArgTypes... args) -> typename std::result_of<F(ArgTypes...)>::type
     {
